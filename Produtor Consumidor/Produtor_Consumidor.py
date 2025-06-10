@@ -8,21 +8,18 @@ from queue import Queue
 class ProdConsGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Produtor-Consumidor SEM Controle")
+        self.root.title("Produtor-Consumidor")
         self.root.geometry("900x600")
 
-        # Área de texto para exibir mensagens
         self.text = tk.Text(self.root, font=("Consolas", 11), bg="#1e1e1e", fg="#dcdcdc")
         self.text.pack(expand=True, fill=tk.BOTH)
 
-        # Frame para controles
         control_frame = tk.Frame(self.root)
         control_frame.pack(pady=10)
 
-        # Botão que inicia a produção e o consumo
         self.start_button = tk.Button(
             control_frame,
-            text="Iniciar Produção e Consumo (Problemático)",
+            text="Iniciar Produção e Consumo",
             command=self.start_threads,
             bg="#f44336",
             fg="white"
@@ -31,10 +28,9 @@ class ProdConsGUI:
 
        
 
-        # Configurações
-        self.max_items = 20  # Menos itens para facilitar a visualização
-        self.buffer_size = 5  # Buffer pequeno para problemas aparecerem rápido
-        self.work_queue = Queue(maxsize=self.buffer_size)  # Fila com tamanho limitado
+        self.max_items = 20 
+        self.buffer_size = 5  
+        self.work_queue = Queue(maxsize=self.buffer_size)  
         self.production_finished = False
         self.running = False
 
@@ -62,7 +58,7 @@ class ProdConsGUI:
         self.text.see(tk.END)
 
     
-
+    #Funções principais de produtor e consumidor 
     def create_work(self):
         self.display("🚧 Iniciando produção PROBLEMÁTICA (sem verificações)", "warning")
         
@@ -72,15 +68,14 @@ class ProdConsGUI:
                 
             v = random.randint(1, 100)
             
-            # INSERE SEM VERIFICAR SE O BUFFER ESTÁ CHEIO (PROBLEMA INTENCIONAL)
             try:
-                self.work_queue.put(v, block=False)  # Vai falhar quando buffer cheio
+                self.work_queue.put(v, block=False)  
                 self.display(f'📦 Produzido item {x+1}/{self.max_items}: valor = {v}')
             except:
                 self.display(f'💥 ERRO GRAVE: Tentou inserir em buffer CHEIO! (item {x+1})', "error")
-                # Em uma implementação real, isso poderia corromper dados ou causar crashes
+               
             
-            time.sleep(random.uniform(0.1, 0.3))  # Velocidade variável
+            time.sleep(random.uniform(0.1, 0.3)) 
 
         self.production_finished = True
         self.display('⛔ Produção finalizada (de forma problemática)', "warning")
@@ -88,33 +83,33 @@ class ProdConsGUI:
     def consume_work(self):
         counter = 0
         while self.running and (not self.production_finished or not self.work_queue.empty()):
-            # TENTA CONSUMIR SEM VERIFICAR SE O BUFFER ESTÁ VAZIO (PROBLEMA INTENCIONAL)
             try:
-                v = self.work_queue.get(block=False)  # Vai falhar quando buffer vazio
+                v = self.work_queue.get(block=False) 
                 counter += 1
                 self.display(f'📥 Consumido item {counter}: valor = {v}')
             except:
                 self.display('💥 ERRO GRAVE: Tentou consumir de buffer VAZIO!', "error")
-                # Em uma implementação real, isso poderia ler lixo de memória ou causar crashes
+                
             
-            time.sleep(random.uniform(0.2, 0.5))  # Velocidade variável
+            time.sleep(random.uniform(0.2, 0.5))  
 
         self.display('⛔ Consumo finalizado (de forma problemática)', "warning")
-
+    ###############################################################################
+    
+    
     def start_threads(self):
         if self.running:
             return
             
         self.running = True
         self.production_finished = False
-        self.text.delete(1.0, tk.END)  # Limpa o texto
+        self.text.delete(1.0, tk.END)  
         
         self.display('⚠️ INICIANDO DEMONSTRAÇÃO DOS PROBLEMAS ⚠️', "error")
         self.display('Produtor vai tentar inserir mesmo com buffer cheio', "warning")
         self.display('Consumidor vai tentar consumir mesmo com buffer vazio', "warning")
         self.display('Isso simula o que acontece SEM os algoritmos de sincronização', "error")
         
-        # Limpa a fila
         while not self.work_queue.empty():
             self.work_queue.get()
             
@@ -124,7 +119,6 @@ class ProdConsGUI:
         producer.start()
         consumer.start()
 
-        # Thread para monitorar quando terminar
         def monitor():
             producer.join()
             consumer.join()

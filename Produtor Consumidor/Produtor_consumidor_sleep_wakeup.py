@@ -8,7 +8,7 @@ class ProdutorConsumidorGUI:
     def __init__(self, master):
         self.master = master
         self.master.title("Produtor-Consumidor com Sleep/WakeUp")
-        self.buffer_size = 2
+        self.buffer_size = 1
         self.buffer = []
         self.producer_sleeping = False
         self.consumer_sleeping = False
@@ -65,6 +65,8 @@ class ProdutorConsumidorGUI:
         state += f"Consumidor: {'😴 Dormindo' if self.consumer_sleeping else '🟢 Ativo'}"
         self.status_label.config(text=state)
 
+
+##funções principais de sleep e wakeup
     def sleep(self, role):
         if role == "producer":
             self.producer_sleeping = True
@@ -100,6 +102,7 @@ class ProdutorConsumidorGUI:
                     if self.consumer_sleeping:
                         self.wake_up("consumer")
             time.sleep(random.uniform(0.5,1.5))
+            
     def consumer(self):
         while True:
             with self.lock:
@@ -115,6 +118,7 @@ class ProdutorConsumidorGUI:
                         self.wake_up("producer")
             time.sleep(random.uniform(0.5, 1.5))
 
+###################################################################################
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -94,6 +94,8 @@ class ProdConsGUI:
             else:
                 self.buffer_labels[i].config(text="🕳️")
 
+    # principais métodos de produção e consumo
+    # produtor e consumidor com semáforos
     def producer(self):
         for i in range(self.max_items):
             item = random.randint(1, 100)
@@ -136,7 +138,9 @@ class ProdConsGUI:
 
 
         self.display('🏁 Todos os itens consumidos.')
-
+    #############################################################################
+    
+    
     def start_threads(self):
         try:
             self.buffer_size = int(self.buffer_entry.get())
