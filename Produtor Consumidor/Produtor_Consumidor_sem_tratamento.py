@@ -17,6 +17,7 @@ class ProdConsGUI:
         control_frame = tk.Frame(self.root)
         control_frame.pack(pady=10)
 
+        #botão para iniciar as simulações
         self.start_button = tk.Button(
             control_frame,
             text="Iniciar Produção e Consumo",
@@ -28,7 +29,10 @@ class ProdConsGUI:
 
        
 
+        #quantidade de itens a serem produzidos
         self.max_items = 20 
+        
+        #tamanho do buffer
         self.buffer_size = 5  
         self.work_queue = Queue(maxsize=self.buffer_size)  
         self.production_finished = False
@@ -59,15 +63,13 @@ class ProdConsGUI:
 
     
     #Funções principais de produtor e consumidor 
-    def create_work(self):
+    def Produtor(self):
         self.display("🚧 Iniciando produção PROBLEMÁTICA (sem verificações)", "warning")
         
         for x in range(self.max_items):
             if not self.running:
-                break
-                
-            v = random.randint(1, 100)
-            
+                break   
+            v = random.randint(1, 100)       
             try:
                 self.work_queue.put(v, block=False)  
                 self.display(f'📦 Produzido item {x+1}/{self.max_items}: valor = {v}')
@@ -76,11 +78,11 @@ class ProdConsGUI:
                
             
             time.sleep(random.uniform(0.1, 0.3)) 
-
+            
         self.production_finished = True
         self.display('⛔ Produção finalizada (de forma problemática)', "warning")
 
-    def consume_work(self):
+    def consumidor(self):
         counter = 0
         while self.running and (not self.production_finished or not self.work_queue.empty()):
             try:
@@ -113,8 +115,8 @@ class ProdConsGUI:
         while not self.work_queue.empty():
             self.work_queue.get()
             
-        producer = threading.Thread(target=self.create_work, name="Produtor-Problemático", daemon=True)
-        consumer = threading.Thread(target=self.consume_work, name="Consumidor-Problemático", daemon=True)
+        producer = threading.Thread(target=self.Produtor, name="Produtor-Problemático", daemon=True)
+        consumer = threading.Thread(target=self.consumidor, name="Consumidor-Problemático", daemon=True)
 
         producer.start()
         consumer.start()

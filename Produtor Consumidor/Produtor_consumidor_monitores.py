@@ -87,19 +87,21 @@ class App:
             consumidor.start()
             self.status_label.config(text="Simulação em andamento...")
 
+    #Produtor
     def executar_produtor(self):
         while True:
             item = random.randint(1, 100)
             self.status_label.config(text=f"Produzindo: {item}")
             self.buffer.inserir(item)
             time.sleep(random.uniform(0.5, 2))
-
+    #consumidor
     def executar_consumidor(self):
         while True:
             item = self.buffer.remover()
             self.status_label.config(text=f"Consumindo: {item}")
             time.sleep(random.uniform(1, 2))
 
+## MAIN
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)

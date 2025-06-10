@@ -122,7 +122,7 @@ class ProdConsGUI:
                 break
 
             self.full.acquire()
-            self.mutex.acquire()            
+            self.mutex.acquire() 
 
             if self.buffer:
                 item = self.buffer.pop(0)

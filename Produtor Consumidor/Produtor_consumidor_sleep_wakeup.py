@@ -8,7 +8,7 @@ class ProdutorConsumidorGUI:
     def __init__(self, master):
         self.master = master
         self.master.title("Produtor-Consumidor com Sleep/WakeUp")
-        self.buffer_size = 1
+        self.buffer_size = 10
         self.buffer = []
         self.producer_sleeping = False
         self.consumer_sleeping = False
@@ -90,32 +90,32 @@ class ProdutorConsumidorGUI:
     def producer(self):
         while True:
             item = f"Item{random.randint(1, 99)}"
-            with self.lock:
-                if len(self.buffer) >= self.buffer_size:
-                    self.sleep("producer")
-                else:
-                    if self.producer_sleeping:
-                        self.wake_up("producer")
-                    self.buffer.append(item)
-                    self.log(f"[Produtor] Produziu: {item}")
-                    self.update_ui()
-                    if self.consumer_sleeping:
-                        self.wake_up("consumer")
+            #with self.lock:
+            if len(self.buffer) >= self.buffer_size:
+                self.sleep("producer")
+            else:
+                if self.producer_sleeping:
+                    self.wake_up("producer")
+                self.buffer.append(item)
+                self.log(f"[Produtor] Produziu: {item}")
+                self.update_ui()
+                if self.consumer_sleeping:
+                    self.wake_up("consumer")
             time.sleep(random.uniform(0.5,1.5))
-            
+        
     def consumer(self):
         while True:
-            with self.lock:
-                if len(self.buffer) == 0:
-                    self.sleep("consumer")
-                else:
-                    if self.consumer_sleeping:
-                        self.wake_up("consumer")
-                    consumed = self.buffer.pop(0)
-                    self.log(f"[Consumidor] Consumiu: {consumed}")
-                    self.update_ui()
-                    if self.producer_sleeping:
-                        self.wake_up("producer")
+            #with self.lock:
+            if len(self.buffer) == 0:
+                self.sleep("consumer")
+            else:
+                if self.consumer_sleeping:
+                    self.wake_up("consumer")
+                consumed = self.buffer.pop(0)
+                self.log(f"[Consumidor] Consumiu: {consumed}")
+                self.update_ui()
+                if self.producer_sleeping:
+                    self.wake_up("producer")
             time.sleep(random.uniform(0.5, 1.5))
 
 ###################################################################################
