@@ -32,14 +32,14 @@ def leitor(id_leitor):
 
         while True:
             mutex.acquire()                 # mutex para garantir que apenas 1 leitor faça essa verificação por vez
-            if write_request == 0:
-                # Se nenhum escritor estiver esperando, entra na leitura
+            if write_request == 0:          # Se nenhum escritor estiver esperando, entra na leitura
                 readcount += 1
                 if readcount == 1:
                     write.acquire()        # Primeiro leitor bloqueia escritores
                 mutex.release()            # libera para o proximo leitor executar caso nao tenha escritores em espera
                 break
-            mutex.release()                # libera para o proximo leitor, sem fazer nada, se tiver algum escritor esperando
+            else:
+             mutex.release()                # libera para o proximo leitor, sem fazer nada, se tiver algum escritor esperando
             time.sleep(0.05)               # Espera um tempo antes de tentar novamente
 
         # Seção crítica de leitura
