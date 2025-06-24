@@ -22,23 +22,20 @@ class LeitorEscritorApp:
         self.mensagens_restantes = TOTAL_MENSAGENS
 
         # Locks e semáforos
-        self.mutex = threading.Semaphore(1)         # Protege readcount
-        self.mutex2 = threading.Semaphore(1)        # Protege writecount
-        self.rw_mutex = threading.Semaphore(1)      # Exclusão entre leitores e escritores
-        self.tryread = threading.Semaphore(1)       # Impede novos leitores quando há escritor esperando
-        self.buffer_lock = threading.Lock()         # Protege buffer
-        self.mensagens_lock = threading.Lock()      # Protege contadores
+        self.mutex = threading.Semaphore(1)
+        self.mutex2 = threading.Semaphore(1)
+        self.rw_mutex = threading.Semaphore(1)
+        self.tryread = threading.Semaphore(1)
+        self.buffer_lock = threading.Lock()
+        self.mensagens_lock = threading.Lock()
 
-        # Para múltiplos destaques simultâneos
         self.highlighted_indices = set()
         self.highlight_lock = threading.Lock()
 
         self.setup_ui()
 
-        # Threads
         self.leitores = []
         self.escritores = []
-
         self.running = True
 
     def setup_ui(self):
@@ -63,12 +60,10 @@ class LeitorEscritorApp:
         self.btn_start = tk.Button(frame_top, text="Iniciar", command=self.start_simulation)
         self.btn_start.grid(row=0, column=6, padx=10)
 
-        # Buffer display
         tk.Label(self.root, text="Buffer:").pack(anchor="w", padx=10)
         self.buffer_frame = tk.Frame(self.root, relief="sunken", borderwidth=1, height=50)
         self.buffer_frame.pack(padx=10, pady=5, fill="x")
 
-        # Logs
         tk.Label(self.root, text="Logs:").pack(anchor="w", padx=10)
         self.text_logs = tk.Text(self.root, height=15, state="disabled")
         self.text_logs.pack(padx=10, pady=5, fill="both", expand=True)
@@ -77,7 +72,7 @@ class LeitorEscritorApp:
         def inner():
             self.text_logs.config(state="normal")
             self.text_logs.insert("end", message + "\n")
-            self.text_logs.see("end")
+            # self.text_logs.see("end")  # REMOVIDO: evita scroll automático
             self.text_logs.config(state="disabled")
         self.root.after(0, inner)
 
@@ -96,7 +91,7 @@ class LeitorEscritorApp:
                 lbl = tk.Label(self.buffer_frame, text=msg, relief="raised", padx=5, pady=2)
                 lbl.pack(side="left", padx=2)
                 if i in highlights:
-                    lbl.config(bg="#ccffcc")  # verde claro
+                    lbl.config(bg="#ccffcc")
         self.root.after(0, inner)
 
     def leitor(self, id_leitor):
@@ -114,7 +109,6 @@ class LeitorEscritorApp:
                 self.rw_mutex.acquire()
             self.mutex.release()
 
-            # Leitura
             with self.buffer_lock:
                 if len(self.buffer) > 0:
                     idx = random.randint(0, len(self.buffer) - 1)
@@ -129,14 +123,11 @@ class LeitorEscritorApp:
                 self.update_buffer_display()
 
                 self.log(f"📖 [LEITOR {id_leitor}] leu: {item}")
-
-                time.sleep(random.uniform(0.5, 1.2))  # Simula tempo lendo
+                time.sleep(random.uniform(0.5, 1.2))
 
                 with self.highlight_lock:
                     self.highlighted_indices.discard(idx)
                 self.update_buffer_display()
-           
-        
 
             self.mutex.acquire()
             self.readcount -= 1
@@ -151,7 +142,7 @@ class LeitorEscritorApp:
             if not self.running:
                 break
 
-            time.sleep(random.uniform(0.3, 0.7))
+            time.sleep(random.uniform(1.0, 2.0))  # Delay visual maior para escrita
 
             self.mutex2.acquire()
             self.writecount += 1
@@ -187,7 +178,6 @@ class LeitorEscritorApp:
                 self.tryread.release()
             self.mutex2.release()
 
-        # Quando todos escritores terminam, log estilizado
         if id_escritor == NUM_ESCRITORES:
             self.log("\n" + "✨" * 10 + " TODOS OS ESCRITORES TERMINARAM " + "✨" * 10 + "\n")
 
@@ -201,7 +191,6 @@ class LeitorEscritorApp:
             self.log("❌ Por favor, insira números válidos!")
             return
 
-        # Reset estado
         self.buffer = deque(maxlen=TOTAL_MENSAGENS)
         self.mensagens_restantes = TOTAL_MENSAGENS
         self.readcount = 0
@@ -213,7 +202,6 @@ class LeitorEscritorApp:
         self.text_logs.config(state="disabled")
         self.update_buffer_display()
 
-        # Cria e inicia threads
         self.leitores.clear()
         self.escritores.clear()
 

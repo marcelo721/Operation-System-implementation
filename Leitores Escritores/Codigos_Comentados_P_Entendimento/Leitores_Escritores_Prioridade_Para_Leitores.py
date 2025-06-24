@@ -6,7 +6,7 @@ from collections import deque
 # Configurações principais
 TAMANHO_BUFFER = 5
 TOTAL_MENSAGENS = 10
-NUM_LEITORES = 5
+NUM_LEITORES = 100
 NUM_ESCRITORES = 2
 
 # Buffer e variáveis de controle

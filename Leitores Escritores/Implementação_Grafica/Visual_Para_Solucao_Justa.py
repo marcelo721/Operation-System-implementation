@@ -9,29 +9,24 @@ class SolucaoJustaApp:
         self.root = root
         self.root.title("Leitores e Escritores - Solução Justa")
 
-        # Variáveis padrão
         self.NUM_LEITORES = 3
         self.NUM_ESCRITORES = 2
         self.TOTAL_MENSAGENS = 10
 
-        # Variáveis compartilhadas
         self.buffer = deque(maxlen=self.TOTAL_MENSAGENS)
         self.readcount = 0
         self.mensagens_restantes = self.TOTAL_MENSAGENS
 
-        # Semáforos e locks para solução justa
-        self.fila = threading.Semaphore(1)         # Fila para acesso justo (FIFO)
-        self.rw_mutex = threading.Semaphore(1)     # Exclusão entre leitores e escritores
-        self.mutex = threading.Semaphore(1)        # Protege readcount
-        self.buffer_lock = threading.Lock()        # Protege buffer
-        self.mensagens_lock = threading.Lock()     # Protege contadores
+        self.fila = threading.Semaphore(1)
+        self.rw_mutex = threading.Semaphore(1)
+        self.mutex = threading.Semaphore(1)
+        self.buffer_lock = threading.Lock()
+        self.mensagens_lock = threading.Lock()
 
-        # Para múltiplos destaques simultâneos
         self.highlighted_indices = set()
         self.highlight_lock = threading.Lock()
 
         self.running = True
-
         self.setup_ui()
 
         self.leitores = []
@@ -59,12 +54,10 @@ class SolucaoJustaApp:
         self.btn_start = tk.Button(frame_top, text="Iniciar", command=self.start_simulation)
         self.btn_start.grid(row=0, column=6, padx=10)
 
-        # Buffer display
         tk.Label(self.root, text="Buffer:").pack(anchor="w", padx=10)
         self.buffer_frame = tk.Frame(self.root, relief="sunken", borderwidth=1, height=50)
         self.buffer_frame.pack(padx=10, pady=5, fill="x")
 
-        # Logs
         tk.Label(self.root, text="Logs:").pack(anchor="w", padx=10)
         self.text_logs = tk.Text(self.root, height=15, state="disabled")
         self.text_logs.pack(padx=10, pady=5, fill="both", expand=True)
@@ -73,7 +66,7 @@ class SolucaoJustaApp:
         def inner():
             self.text_logs.config(state="normal")
             self.text_logs.insert("end", message + "\n")
-            self.text_logs.see("end")
+            # Scroll automático desativado
             self.text_logs.config(state="disabled")
         self.root.after(0, inner)
 
@@ -92,7 +85,7 @@ class SolucaoJustaApp:
                 lbl = tk.Label(self.buffer_frame, text=msg, relief="raised", padx=5, pady=2)
                 lbl.pack(side="left", padx=2)
                 if i in highlights:
-                    lbl.config(bg="#ccffcc")  # verde claro
+                    lbl.config(bg="#ccffcc")
         self.root.after(0, inner)
 
     def leitor(self, id_leitor):
@@ -101,13 +94,13 @@ class SolucaoJustaApp:
                 if self.mensagens_restantes <= 0 and len(self.buffer) == 0:
                     break
 
-            self.fila.acquire()           # Entra na fila justa
+            self.fila.acquire()
+
             self.mutex.acquire()
+            if self.readcount == 0:
+                self.rw_mutex.acquire()
             self.readcount += 1
-            if self.readcount == 1:
-                self.rw_mutex.acquire()   # Primeiro leitor bloqueia escritores
             self.mutex.release()
-            self.fila.release()           # Libera fila para o próximo
 
             # Leitura
             with self.buffer_lock:
@@ -122,11 +115,8 @@ class SolucaoJustaApp:
                 with self.highlight_lock:
                     self.highlighted_indices.add(idx)
                 self.update_buffer_display()
-
                 self.log(f"📖 [LEITOR {id_leitor}] leu: {item}")
-
-                time.sleep(random.uniform(0.5, 1.2))  # Simula tempo lendo
-
+                time.sleep(random.uniform(0.5, 1.2))
                 with self.highlight_lock:
                     self.highlighted_indices.discard(idx)
                 self.update_buffer_display()
@@ -134,8 +124,10 @@ class SolucaoJustaApp:
             self.mutex.acquire()
             self.readcount -= 1
             if self.readcount == 0:
-                self.rw_mutex.release()   # Último leitor libera escritores
+                self.rw_mutex.release()
             self.mutex.release()
+
+            self.fila.release()
 
             time.sleep(random.uniform(0.3, 0.7))
 
@@ -144,10 +136,10 @@ class SolucaoJustaApp:
             if not self.running:
                 break
 
-            time.sleep(random.uniform(0.3, 0.7))
+            time.sleep(random.uniform(1.0, 2.0))  # Delay para destacar alternância
 
-            self.fila.acquire()       # Entra na fila justa
-            self.rw_mutex.acquire()   # Exclusividade para escrever
+            self.fila.acquire()
+            self.rw_mutex.acquire()
             self.fila.release()
 
             with self.mensagens_lock:
@@ -165,7 +157,6 @@ class SolucaoJustaApp:
 
             self.rw_mutex.release()
 
-        # Mensagem estilizada quando todos escritores terminam
         if id_escritor == self.NUM_ESCRITORES:
             self.log("\n" + "✨" * 10 + " TODOS OS ESCRITORES TERMINARAM " + "✨" * 10 + "\n")
 
@@ -178,14 +169,12 @@ class SolucaoJustaApp:
             self.log("❌ Por favor, insira números válidos!")
             return
 
-        # Reset estado
         self.buffer = deque(maxlen=self.TOTAL_MENSAGENS)
         self.mensagens_restantes = self.TOTAL_MENSAGENS
         self.readcount = 0
         self.highlighted_indices = set()
         self.running = True
 
-        # Reset semáforos
         self.fila = threading.Semaphore(1)
         self.rw_mutex = threading.Semaphore(1)
         self.mutex = threading.Semaphore(1)

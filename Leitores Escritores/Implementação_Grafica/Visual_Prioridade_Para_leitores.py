@@ -4,7 +4,6 @@ import random
 from collections import deque
 import tkinter as tk
 
-# Configurações padrão
 NUM_LEITORES = 3
 NUM_ESCRITORES = 2
 TOTAL_MENSAGENS = 10
@@ -14,27 +13,23 @@ class LeitorPrioridadeApp:
         self.root = root
         self.root.title("Leitores e Escritores - Prioridade para Leitores")
 
-        # Variáveis compartilhadas
         self.buffer = deque(maxlen=TOTAL_MENSAGENS)
         self.readcount = 0
         self.mensagens_restantes = TOTAL_MENSAGENS
 
-        # Locks e semáforos
-        self.mutex = threading.Semaphore(1)      # Protege readcount
-        self.rw_mutex = threading.Semaphore(1)   # Exclusão entre leitores e escritores
-        self.buffer_lock = threading.Lock()      # Protege buffer
-        self.mensagens_lock = threading.Lock()   # Protege contadores
-
-        # Para múltiplos destaques simultâneos
-        self.highlighted_indices = set()
+        # Semáforos
+        self.mutex = threading.Semaphore(1)         # Protege readcount
+        self.rw_mutex = threading.Semaphore(1)      # Acesso ao recurso
+        self.read_try = threading.Semaphore(1)      # Impede novos leitores se escritor estiver esperando
+        self.buffer_lock = threading.Lock()
+        self.mensagens_lock = threading.Lock()
         self.highlight_lock = threading.Lock()
 
+        self.highlighted_indices = set()
         self.setup_ui()
 
-        # Threads
         self.leitores = []
         self.escritores = []
-
         self.running = True
 
     def setup_ui(self):
@@ -59,12 +54,10 @@ class LeitorPrioridadeApp:
         self.btn_start = tk.Button(frame_top, text="Iniciar", command=self.start_simulation)
         self.btn_start.grid(row=0, column=6, padx=10)
 
-        # Buffer display
         tk.Label(self.root, text="Buffer:").pack(anchor="w", padx=10)
         self.buffer_frame = tk.Frame(self.root, relief="sunken", borderwidth=1, height=50)
         self.buffer_frame.pack(padx=10, pady=5, fill="x")
 
-        # Logs
         tk.Label(self.root, text="Logs:").pack(anchor="w", padx=10)
         self.text_logs = tk.Text(self.root, height=15, state="disabled")
         self.text_logs.pack(padx=10, pady=5, fill="both", expand=True)
@@ -73,7 +66,7 @@ class LeitorPrioridadeApp:
         def inner():
             self.text_logs.config(state="normal")
             self.text_logs.insert("end", message + "\n")
-            self.text_logs.see("end")
+            # self.text_logs.see("end")  # Comentado para manter rolagem manual
             self.text_logs.config(state="disabled")
         self.root.after(0, inner)
 
@@ -92,7 +85,7 @@ class LeitorPrioridadeApp:
                 lbl = tk.Label(self.buffer_frame, text=msg, relief="raised", padx=5, pady=2)
                 lbl.pack(side="left", padx=2)
                 if i in highlights:
-                    lbl.config(bg="#ccffcc")  # verde claro
+                    lbl.config(bg="#ccffcc")
         self.root.after(0, inner)
 
     def leitor(self, id_leitor):
@@ -101,13 +94,14 @@ class LeitorPrioridadeApp:
                 if self.mensagens_restantes <= 0 and len(self.buffer) == 0:
                     break
 
+            self.read_try.acquire()
             self.mutex.acquire()
             self.readcount += 1
             if self.readcount == 1:
                 self.rw_mutex.acquire()
             self.mutex.release()
+            self.read_try.release()
 
-            # Leitura
             with self.buffer_lock:
                 if len(self.buffer) > 0:
                     idx = random.randint(0, len(self.buffer) - 1)
@@ -122,8 +116,7 @@ class LeitorPrioridadeApp:
                 self.update_buffer_display()
 
                 self.log(f"📖 [LEITOR {id_leitor}] leu: {item}")
-
-                time.sleep(random.uniform(0.5, 1.2))  # Simula tempo lendo
+                time.sleep(random.uniform(0.5, 1.2))
 
                 with self.highlight_lock:
                     self.highlighted_indices.discard(idx)
@@ -142,13 +135,15 @@ class LeitorPrioridadeApp:
             if not self.running:
                 break
 
-            time.sleep(random.uniform(0.3, 0.7))
+            time.sleep(random.uniform(1.0, 2.0))  # Delay maior para escrita
 
+            self.read_try.acquire()  # Bloqueia novos leitores
             self.rw_mutex.acquire()
 
             with self.mensagens_lock:
                 if self.mensagens_restantes <= 0:
                     self.rw_mutex.release()
+                    self.read_try.release()
                     return
 
                 self.mensagens_restantes -= 1
@@ -160,8 +155,8 @@ class LeitorPrioridadeApp:
             self.update_buffer_display()
 
             self.rw_mutex.release()
+            self.read_try.release()  # Libera novos leitores
 
-        # Quando todos escritores terminam, log estilizado
         if id_escritor == NUM_ESCRITORES:
             self.log("\n" + "✨" * 10 + " TODOS OS ESCRITORES TERMINARAM " + "✨" * 10 + "\n")
 
@@ -175,7 +170,6 @@ class LeitorPrioridadeApp:
             self.log("❌ Por favor, insira números válidos!")
             return
 
-        # Reset estado
         self.buffer = deque(maxlen=TOTAL_MENSAGENS)
         self.mensagens_restantes = TOTAL_MENSAGENS
         self.readcount = 0
@@ -186,7 +180,6 @@ class LeitorPrioridadeApp:
         self.text_logs.config(state="disabled")
         self.update_buffer_display()
 
-        # Cria e inicia threads
         self.leitores.clear()
         self.escritores.clear()
 
